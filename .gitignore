@@ -1,0 +1,17 @@
+# Competition data is not redistributable, see data/README.md
+data/*
+!data/README.md
+
+# Generated prediction files
+submissions/
+
+# Training artifacts
+catboost_info/
+
+# Environments
+.venv/
+
+# Notebook and OS noise
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store

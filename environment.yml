@@ -1,0 +1,13 @@
+name: kaggle-house-prices
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy=1.26.4
+  - pandas=2.3.3
+  - scikit-learn=1.8.0
+  - xgboost=3.2.0
+  - catboost=1.2.7
+  - matplotlib=3.10.8
+  - jupyterlab=4.5
+  - kaggle=1.8
