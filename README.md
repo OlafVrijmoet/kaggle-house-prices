@@ -10,21 +10,21 @@ Predicting sale prices for houses in Ames, Iowa (1,460 training rows, 79 feature
 
 | # | Configuration | Local validation | Public LB |
 |---|---|---|---|
-| 1 | XGBoost, tuned on a single split | n/a | 0.12909 |
-| 2 | Same model re-selected under repeated-split validation | n/a | 0.13184 |
-| 3 | 50/50 XGBoost + CatBoost blend | n/a | 0.12643 |
-| 4 | + structural features (two rounds: sizes, ratios, ages) | n/a | 0.12486 |
-| 5 | + seed bagging, 5 seeds equal weight | n/a | 0.12388 |
-| 6 | Tuning day: submission blends, extra model diversity, Optuna (9 submissions) | n/a | 0.12384 |
+| 1 | XGBoost, tuned on a single split | not preserved | 0.12909 |
+| 2 | Same model re-selected under repeated-split validation | not preserved | 0.13184 |
+| 3 | 50/50 XGBoost + CatBoost blend | not preserved | 0.12643 |
+| 4 | + structural features (two rounds: sizes, ratios, ages) | not preserved | 0.12486 |
+| 5 | + seed bagging, 5 seeds equal weight | not preserved | 0.12388 |
+| 6 | Tuning day: submission blends, extra model diversity, Optuna (9 submissions) | not preserved | 0.12384 |
 | 7 | + ordinal encodings for 22 quality-scale columns | 0.1074 | 0.12280 |
 | 8 | Broad additive round 2: subsystem totals, quality-size, effective age | 0.1082, lost to baseline | not submitted |
 | 9 | Asymmetric views: XGBoost drops the raw ordered categoricals, CatBoost keeps them | 0.1071 | 0.12262 |
 | 10 | Deeper XGBoost cleanups, one family at a time (3 variants) | all lost to baseline | not submitted |
 | 11 | + `log1p` copies of LotArea, LotFrontage, GrLivArea and total SF, XGBoost side only | 0.1070 | **0.12230** |
 
-Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iterations 1 to 6 predate the surviving notebooks; their public scores are the recorded Kaggle submissions, and rows 7 to 11 are fully reproducible from the notebooks in this repo. The headline stat of the project sits between rows 5 and 11: a full day of tuning and blending (row 6, nine submissions) improved the public score by 0.00004, while the three feature-representation sprints that followed improved it by 0.00158.
+Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iterations 2 to 6 were validated the same way at the time, but their notebooks were not kept, so only their verified public scores are quoted; rows 7 to 11 are fully reproducible from the notebooks in this repo. The headline stat of the project sits between rows 5 and 11: a full day of tuning and blending (row 6, nine submissions) improved the public score by 0.00004, while the three feature-representation sprints that followed improved it by 0.00158.
 
-## The approach: every change had to beat the incumbent
+## The approach: local validation decides, the leaderboard confirms
 
 **The data dictated the setup.** Four EDA findings carried direct consequences:
 
