@@ -2,7 +2,7 @@
 
 Predicting sale prices for houses in Ames, Iowa (1,460 training rows, 79 features) for the Kaggle competition [House Prices - Advanced Regression Techniques](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques). Scored on RMSE between the log of the predicted and the log of the actual price, so errors count relative to the price of the house.
 
-**Result: public leaderboard score improved from 0.12909 to 0.12230 across 11 iterations in six days.** Two of those iterations shipped nothing, on purpose: the validation harness rejected the candidate features, and both times the next, narrower idea won instead.
+**Result: public leaderboard score improved from 0.12909 to 0.12230 across 11 iterations.** Two of those iterations shipped nothing, on purpose: the validation harness rejected the candidate features, and both times the next, narrower idea won instead.
 
 ![Submission progression](assets/submission_progression.png)
 
@@ -22,7 +22,7 @@ Predicting sale prices for houses in Ames, Iowa (1,460 training rows, 79 feature
 | 10 | Deeper XGBoost cleanups, one family at a time (3 variants) | all lost to baseline | not submitted |
 | 11 | + `log1p` copies of LotArea, LotFrontage, GrLivArea and total SF, XGBoost side only | 0.1070 | **0.12230** |
 
-Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iterations 2 to 6 were validated the same way at the time, but their notebooks were not kept, so only their verified public scores are quoted; rows 7 to 11 are fully reproducible from the notebooks in this repo. The headline stat of the project sits between rows 5 and 11: a full day of tuning and blending (row 6, nine submissions) improved the public score by 0.00004, while the three feature-representation sprints that followed improved it by 0.00158.
+Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iterations 2 to 6 were validated the same way at the time, but their notebooks were not kept, so only their verified public scores are quoted; rows 7 to 11 are fully reproducible from the notebooks in this repo. The headline stat of the project sits between rows 5 and 11: a concentrated round of tuning and blending (row 6, nine submissions) improved the public score by 0.00004, while the three feature-representation sprints that followed improved it by 0.00158.
 
 ## The approach: local validation decides, the leaderboard confirms
 
@@ -43,7 +43,7 @@ Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iter
 
 **Variance next: seed bagging.** The same blend trained on 5 seed pairs and averaged took 0.12388. Local validation called a tapered 7-seed bag a statistical tie with the 5-seed version; the public leaderboard preferred bag5 both times they went head to head later, by 0.0001 to 0.0002.
 
-**The tuning day.** With the architecture fixed, one full day went into everything that is not representation: blending submission files, adding a third model for diversity, Optuna searches over both boosters. Nine submissions, best 0.12384, net improvement 0.00004. That settled the question of where the remaining signal lived: not in the parameters, in the features.
+**The tuning phase.** With the architecture fixed, a dedicated round went into everything that is not representation: blending submission files, adding a third model for diversity, Optuna searches over both boosters. Nine submissions, best 0.12384, net improvement 0.00004. That settled the question of where the remaining signal lived: not in the parameters, in the features.
 
 **Five validation-gated feature sprints (iterations 7 to 11).** Each sprint tested one family of representation ideas under the fixed bag5 blend, and the gate decided. Two sprints ended with the baseline winning and nothing submitted. Every submission that did go out beat the incumbent.
 
@@ -70,7 +70,7 @@ I stopped there. Four conservative blend files around the final winner were buil
 ## Three lessons
 
 1. **A gate that can say no keeps the score honest.** Two of five sprints ended with the baseline winning, and both times the next, narrower idea won instead. From the first sprint on, every submission beat the incumbent, because the losing ideas never reached the leaderboard.
-2. **Representation beat tuning by a factor of 40.** One day of blending, diversity and hyperparameter search moved the public score by 0.00004; three feature sprints moved it by 0.00158. Once the model family is fixed, what the models see is the only lever that matters.
+2. **Representation beat tuning by a factor of 40.** A tuning-and-blending phase moved the public score by 0.00004; three feature sprints moved it by 0.00158. Once the model family is fixed, what the models see is the only lever that matters.
 3. **The two models in a blend do not want the same features.** Both late wins came from making the views less alike: XGBoost dropped the raw ordered columns CatBoost kept, then took four log features CatBoost never saw. Every attempt after the ordinals to enrich both models with the same features failed the gate.
 
 What I would try next: training on log price directly, since the metric lives there, and only then a small blend family around the winner.
