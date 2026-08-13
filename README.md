@@ -26,7 +26,7 @@ Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iter
 
 ## The approach: local validation decides, the leaderboard confirms
 
-**The data dictated the setup.** Four EDA findings carried direct consequences:
+**Four findings from the EDA.** Each carried a direct consequence:
 
 - The metric is RMSE on log price, so all local evaluation happens in log space, and every validation split is stratified by log-price decile so no split gets an accidental slice of the market.
 - Four houses have more than 4,000 sq ft of living area. Two sold around $750k, right on trend; two sold under $200k, and both are `Partial` sales, priced before the house was finished. I dropped exactly those two rows and kept every other extreme point.
@@ -35,15 +35,15 @@ Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iter
 
 ![Partial sales](assets/partial_sales.png)
 
-**An honest harness before anything else.** The first submission was an XGBoost tuned against a single validation split: 0.12909. Rebuilding the same model under repeated splits selected a configuration that scored 0.13184. The first number had been luck; the second one I could trust and build on. Every later decision went through the same gate: scout candidates on 3 stratified 80/20 splits, re-validate the shortlist on 5 fixed splits, rank by mean outer log RMSE, and submit only what beats the incumbent.
+**The validation harness came first.** The first submission was an XGBoost tuned against a single validation split: 0.12909. Rebuilding the same model under repeated splits selected a configuration that scored 0.13184. The first number had been luck. Every later decision went through the same gate: scout candidates on 3 stratified 80/20 splits, re-validate the shortlist on 5 fixed splits, rank by mean outer log RMSE, and submit only what beats the incumbent.
 
 **Why add CatBoost?** A single GBDT's errors are correlated with themselves, and XGBoost only sees categoricals through one-hot columns. CatBoost handles them natively, so it makes different mistakes on the same rows. The first blend attempt scored 0.12706, and simplifying it to an equal 50/50 blend gave 0.12643, from 0.13184 one iteration earlier.
 
 **Structural features, and a first public failure.** A refined age-flags family looked plausible and scored 0.12747, worse than its 0.12643 baseline. The systematic follow-up (size composites like total square footage, floor-balance ratios, quality-size interactions, age features) recovered the idea properly: 0.12505, then 0.12486 after a second round.
 
-**Variance next: seed bagging.** The same blend trained on 5 seed pairs and averaged took 0.12388. Local validation called a tapered 7-seed bag a statistical tie with the 5-seed version; the public leaderboard preferred bag5 both times they went head to head later, by 0.0001 to 0.0002.
+**Reducing variance with seed bagging.** The same blend trained on 5 seed pairs and averaged took 0.12388. Local validation called a tapered 7-seed bag a statistical tie with the 5-seed version; the public leaderboard preferred bag5 both times they went head to head later, by 0.0001 to 0.0002.
 
-**The tuning phase.** With the architecture fixed, a dedicated round went into everything that is not representation: blending submission files, adding a third model for diversity, Optuna searches over both boosters. Nine submissions, best 0.12384, net improvement 0.00004. That settled the question of where the remaining signal lived: not in the parameters, in the features.
+**The tuning phase.** With the architecture fixed, a dedicated round went into everything that is not representation: blending submission files, adding a third model for diversity, Optuna searches over both boosters. Nine submissions, best 0.12384, net improvement 0.00004. The remaining signal was in the features, not the parameters.
 
 **Five validation-gated feature sprints (iterations 7 to 11).** Each sprint tested one family of representation ideas under the fixed bag5 blend, and the gate decided. Two sprints ended with the baseline winning and nothing submitted. Every submission that did go out beat the incumbent.
 
@@ -61,7 +61,7 @@ Local validation is the mean log RMSE over 5 fixed stratified 80/20 splits. Iter
 
 **Sprint 5: the narrow version of a failed idea (0.12230).** Sprint 1 had rejected a broad log-transform family. A skew probe suggested the idea was right but the dose was wrong: only the core size columns carry enough signal to matter. Four `log1p` features (`LotArea`, `LotFrontage`, `GrLivArea`, total SF), added on the XGBoost side only, passed the gate at 0.10700 and finished at 0.12230.
 
-**What the winner looks like against reality.** The exact submission configuration, retrained on 80 percent of the training data and shown on the unseen 20 percent: 73 percent of predictions land within 10 percent of the sale price, the median miss is 5 percent, and both tails regress toward the middle, the classic signature of tree ensembles that cannot extrapolate.
+**What the winner looks like against reality.** The exact submission configuration, retrained on 80 percent of the training data and shown on the unseen 20 percent: 73 percent of predictions land within 10 percent of the sale price, the median miss is 5 percent, and both tails regress toward the middle, because tree ensembles cannot extrapolate.
 
 ![Predicted vs actual](assets/pred_vs_actual.png)
 
@@ -69,8 +69,8 @@ I stopped there. Four conservative blend files around the final winner were buil
 
 ## Three lessons
 
-1. **A gate that can say no keeps the score honest.** Two of five sprints ended with the baseline winning, and both times the next, narrower idea won instead. From the first sprint on, every submission beat the incumbent, because the losing ideas never reached the leaderboard.
-2. **Representation beat tuning by a factor of 40.** A tuning-and-blending phase moved the public score by 0.00004; three feature sprints moved it by 0.00158. Once the model family is fixed, what the models see is the only lever that matters.
+1. **Rejecting candidates locally keeps the leaderboard clean.** Two of five sprints ended with the baseline winning, and both times the next, narrower idea won instead. From the first sprint on, every submission beat the incumbent, because the losing ideas never reached the leaderboard.
+2. **Representation beat tuning by a factor of 40.** A tuning-and-blending phase moved the public score by 0.00004; three feature sprints moved it by 0.00158.
 3. **The two models in a blend do not want the same features.** Both late wins came from making the views less alike: XGBoost dropped the raw ordered columns CatBoost kept, then took four log features CatBoost never saw. Every attempt after the ordinals to enrich both models with the same features failed the gate.
 
 What I would try next: training on log price directly, since the metric lives there, and only then a small blend family around the winner.
